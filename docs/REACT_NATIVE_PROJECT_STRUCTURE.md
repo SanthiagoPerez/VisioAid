@@ -1,13 +1,15 @@
-# VisioAid — propuesta de estructura React Native
+# VisioAid — estructura React Native
 
-> Estado: **scaffolding aprobado e inicializado el 1 de septiembre de 2026**. Solo se conserva el código mínimo de Expo/React Native; las carpetas funcionales están vacías.
+> Estado: **proyecto móvil iOS/Android en desarrollo**. Login, Registro, servicios mock y dictado nativo ya están implementados.
 
 ## 1. Decisiones de partida
 
 - Crear la aplicación móvil directamente en la raíz del repositorio. La documentación del proyecto vivirá en `docs/`.
 - Usar React Native con Expo, TypeScript estricto y Expo Router.
 - Usar NativeWind con Tailwind CSS para aplicar estilos mediante `className` sobre componentes nativos.
-- Crear un development build; el OCR con Google ML Kit necesitará código nativo y no dependerá de Expo Go.
+- Usar exclusivamente iOS y Android; no mantener una salida para navegador.
+- Crear un development build; el dictado nativo y el OCR con Google ML Kit requieren código nativo y no dependen de Expo Go.
+- Permitir la previsualización de la interfaz en Expo Go mediante carga opcional del módulo de dictado; en ese entorno la acción se presenta deshabilitada y con una explicación accesible.
 - Mantener los archivos de `app/` como rutas delgadas. La interfaz y la lógica vivirán en `src/`.
 - Encapsular cámara, OCR, voz, almacenamiento y API. Ninguna pantalla llamará directamente a esas APIs.
 - Procesar las fotografías y el texto reconocido de forma temporal. No se guardarán en la galería, almacenamiento persistente, backend, logs ni analítica.
@@ -35,8 +37,9 @@ Inicio técnico
 
 | Nombre solicitado | Ruta propuesta                      | Responsabilidad                                                                            |
 | ----------------- | ----------------------------------- | ------------------------------------------------------------------------------------------ |
-| Register          | `app/(auth)/register.tsx`           | Crear una cuenta y enlazar con Login.                                                      |
-| Login             | `app/(auth)/login.tsx`              | Iniciar sesión con correo/contraseña, Google o Apple.                                      |
+| Register          | `app/register.tsx`                  | Crear una cuenta, ofrecer dictado nativo y enlazar con Login.                              |
+| Login             | `app/index.tsx`                     | Iniciar sesión con correo/contraseña, Google o Apple.                                      |
+| Welcome           | `app/welcome.tsx`                   | Confirmar de forma simple y accesible que la autenticación mock finalizó.                  |
 | Permitions        | `app/(onboarding)/permissions.tsx`  | Explicar y solicitar solamente el permiso de cámara. Se corrige el nombre a `Permissions`. |
 | mainPage          | `app/(reader)/main.tsx`             | Acción principal para abrir la cámara y acceso a Config.                                   |
 | camera            | `app/(reader)/camera.tsx`           | Vista previa, captura temporal y estado de procesamiento.                                  |
@@ -60,7 +63,8 @@ VisioAid/
 ├── app/
 │   ├── _layout.tsx
 │   ├── index.tsx
-│   ├── (auth)/                  # Vacía
+│   ├── register.tsx
+│   ├── welcome.tsx
 │   ├── (onboarding)/            # Vacía
 │   └── (reader)/                # Vacía
 ├── assets/
@@ -72,7 +76,10 @@ VisioAid/
 │   │   └── ui/                  # Vacía
 │   ├── features/
 │   │   ├── auth/
-│   │   │   └── components/      # Vacía
+│   │   │   ├── AuthField.tsx
+│   │   │   ├── AuthScreen.tsx
+│   │   │   ├── DictationButton.tsx
+│   │   │   └── useNativeDictation.ts
 │   │   ├── permissions/
 │   │   │   └── components/      # Vacía
 │   │   ├── camera/
@@ -82,6 +89,8 @@ VisioAid/
 │   │   └── settings/
 │   │       └── components/      # Vacía
 │   ├── hooks/                   # Vacía
+│   ├── services/
+│   │   └── auth.service.ts
 │   ├── infrastructure/
 │   │   ├── api/                 # Vacía
 │   │   ├── camera/              # Vacía
@@ -179,6 +188,7 @@ Las versiones no se fijarán a mano. `create-expo-app` elegirá las versiones ba
 - `expo-camera`: permiso, vista previa y captura temporal.
 - `expo-file-system`: eliminación explícita del archivo temporal después del OCR.
 - `expo-speech`: lectura en voz alta mediante el motor del dispositivo.
+- `expo-speech-recognition`: entrada por voz nativa mediante los reconocedores de iOS y Android.
 - `expo-secure-store`: tokens de sesión y otros secretos pequeños.
 - `@react-native-async-storage/async-storage`: preferencias locales no sensibles.
 - `@react-native-community/slider`: tamaño del texto y velocidad de lectura.
@@ -187,8 +197,8 @@ Las versiones no se fijarán a mano. `create-expo-app` elegirá las versiones ba
 
 ### Autenticación del MVP
 
-- `expo-auth-session`, `expo-web-browser` y `expo-crypto`: flujo OAuth/OIDC de Google sin incluir secretos en la app.
-- `expo-apple-authentication`: inicio de sesión nativo con Apple en iOS.
+- Apple y Google conservan botones mock detrás del contrato de autenticación; no requieren capacidades nativas ni perfiles especiales para compilar el prototipo.
+- La integración real con Apple se habilitará cuando el proyecto use una membresía de Apple Developer compatible con `Sign in with Apple`. Google deberá usar un SDK nativo compatible con development builds.
 
 El correo/contraseña consumirá el backend mediante `fetch`, por lo que no se necesita `axios`.
 
@@ -216,13 +226,14 @@ Tampoco se instalarán por ahora React Query, librerías de analítica ni un SDK
 
 - `app.config.ts` definirá `scheme`, `ios.bundleIdentifier`, `android.package` y rutas tipadas.
 - El plugin de `expo-camera` incluirá una explicación en español para `NSCameraUsageDescription`.
-- La aplicación no grabará audio; se bloqueará `android.permission.RECORD_AUDIO` si alguna dependencia intenta incorporarlo.
+- El permiso `RECORD_AUDIO` se solicitará solo al activar el dictado. No se persistirá la grabación.
 - No se solicitará permiso de galería o biblioteca multimedia.
 - La URI de la captura se conservará solo durante el OCR y luego se eliminará de la caché.
 - El texto reconocido vivirá únicamente en el estado efímero de `reader.store.ts` y se descartará al cerrar o iniciar otra captura.
 - `.env.example` documentará solo valores públicos como la URL de la API y los client IDs públicos. No habrá secretos dentro de variables `EXPO_PUBLIC_*`.
 - Los controles tendrán etiquetas, roles, estados y áreas táctiles accesibles; se validará el orden del foco y los anuncios hablados.
 - Login y Register usarán `KeyboardAvoidingView`; todas las pantallas respetarán Safe Area y el flujo controlará el botón Atrás de Android.
+- El dictado anunciará inicio, resultado y errores con VoiceOver/TalkBack.
 - Cada pantalla consumirá únicamente tokens semánticos de `theme.ts` para garantizar la aplicación consistente de la paleta negra y blanca.
 
 ## 9. `.gitignore` aprobado
@@ -237,7 +248,6 @@ El único `.gitignore`, ubicado en la raíz, ignora los artefactos generales y l
 node_modules/
 .expo/
 dist/
-web-build/
 
 # Native projects generated by Expo CNG
 android/
@@ -261,23 +271,23 @@ ios/
 npx create-expo-app@latest <directorio-temporal>/visioaid --template default@sdk-57
 
 # Después de integrar los archivos de la plantilla en la raíz del repositorio:
-npx expo install expo-dev-client expo-camera expo-file-system expo-speech expo-secure-store @react-native-async-storage/async-storage @react-native-community/slider expo-auth-session expo-web-browser expo-crypto expo-apple-authentication
+npx expo install expo-dev-client expo-camera expo-file-system expo-speech expo-speech-recognition expo-secure-store @react-native-async-storage/async-storage @react-native-community/slider
 npm install zustand react-hook-form zod @hookform/resolvers
 npx expo-doctor
 ```
 
-Después se reemplazó el contenido de ejemplo por el árbol aprobado, se creó el `.gitignore` raíz y se comprobaron TypeScript, ESLint y Expo Doctor. En esta etapa no se implementó la interfaz visual completa ni la integración real de OCR.
+Después se reemplazó el contenido de ejemplo por los flujos accesibles de Login y Registro, se agregó el dictado nativo y se conservaron contratos desacoplados para la futura autenticación real.
 
 ## 11. Resultado de esta fase
 
 1. Proyecto Expo creado directamente en la raíz con su `.gitignore`.
 2. Dependencias aprobadas instaladas con versiones compatibles con Expo SDK 57.
-3. Carpetas principales creadas vacías y conservadas mediante `.gitkeep`.
-4. Solo `app/_layout.tsx` y `app/index.tsx` contienen el mínimo requerido por Expo Router.
-5. Las reglas futuras de alto contraste permanecen documentadas, pero todavía no existen archivos de estilos.
+3. Login y Registro implementados con alto contraste y accesibilidad nativa.
+4. Servicio de autenticación mock preparado para sustituirse por llamadas reales.
+5. Dictado nativo implementado para iOS y Android mediante development builds.
 6. Jest, infraestructura de pruebas unitarias y carpeta `tests/` excluidos del MVP por decisión del equipo.
 
-La creación de rutas, pantallas, componentes, estilos, OCR, backend y autenticación real queda para fases posteriores.
+La implementación de OCR, backend y autenticación real queda para fases posteriores.
 
 ## 12. Referencias de accesibilidad
 

@@ -5,6 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'VisioAid',
   slug: 'visioaid',
   version: '1.0.0',
+  platforms: ['ios', 'android'],
   orientation: 'portrait',
   scheme: 'visioaid',
   userInterfaceStyle: 'dark',
@@ -13,24 +14,22 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config.ios,
     supportsTablet: true,
     bundleIdentifier: 'com.visioaid.app',
-    usesAppleSignIn: true,
     icon: './assets/expo.icon',
+    infoPlist: {
+      ...config.ios?.infoPlist,
+      NSMicrophoneUsageDescription:
+        'VisioAid necesita acceso al micrófono para convertir tu voz en texto en los formularios.',
+    },
   },
   android: {
     ...config.android,
     package: 'com.visioaid.app',
-    blockedPermissions: ['android.permission.RECORD_AUDIO'],
     predictiveBackGestureEnabled: true,
     adaptiveIcon: {
       backgroundColor: '#000000',
       foregroundImage: './assets/images/android-icon-foreground.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
-  },
-  web: {
-    ...config.web,
-    output: 'static',
-    favicon: './assets/images/favicon.png',
   },
   plugins: [
     'expo-router',
@@ -39,14 +38,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         cameraPermission:
           'VisioAid necesita usar la cámara para capturar y reconocer el texto de tu entorno.',
-        microphonePermission: false,
+        microphonePermission:
+          'VisioAid necesita acceso al micrófono para convertir tu voz en texto en los formularios.',
         recordAudioAndroid: false,
         barcodeScannerEnabled: false,
       },
     ],
     'expo-secure-store',
-    'expo-web-browser',
-    'expo-apple-authentication',
+    [
+      'expo-speech-recognition',
+      {
+        microphonePermission:
+          'VisioAid necesita acceso al micrófono para convertir tu voz en texto en los formularios.',
+        speechRecognitionPermission:
+          'VisioAid necesita usar el reconocimiento de voz para completar los formularios mediante dictado.',
+        androidSpeechServicePackages: ['com.google.android.googlequicksearchbox'],
+      },
+    ],
     [
       'expo-splash-screen',
       {

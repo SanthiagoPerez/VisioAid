@@ -33,10 +33,20 @@ Una función nueva no debe complicar innecesariamente la acción principal: **ca
 ## Estado actual
 
 - El proyecto Expo SDK 57 y su estructura inicial ya fueron creados en la raíz del repositorio.
-- Solo existe el código mínimo de inicialización de Expo Router y una pantalla de bienvenida para validar los estilos. Las carpetas funcionales, hooks e infraestructura están vacías y se conservan mediante `.gitkeep`.
-- NativeWind está configurado para usar utilidades de Tailwind CSS sobre componentes React Native; todavía no existen pantallas de negocio, stores, adaptadores ni lógica de negocio.
-- Las dependencias previstas para cámara, voz, almacenamiento y autenticación están instaladas, pero todavía no se utilizan.
-- La integración de Google ML Kit, el backend y la autenticación continúan abiertas.
+- Login y Registro están implementados con controles de alto contraste, semántica nativa para VoiceOver/TalkBack y objetivos táctiles de al menos `48 × 48 dp`.
+- Registro solicita únicamente nombre, edad, correo y contraseña. El tipo de discapacidad visual queda aplazado y no se recopila.
+- Zod valida cada campo antes de invocar el servicio mock: nombre obligatorio, edad mayor a 10 años, correo con formato válido y contraseña de al menos 6 caracteres sin requisitos adicionales.
+- Los errores se muestran junto al campo correspondiente y se anuncian mediante las APIs nativas de accesibilidad.
+- Apple y Google se presentan como botones visuales mock con sus logotipos; no activan capacidades nativas y navegan a una pantalla de bienvenida al completarse.
+- Todos los botones de autenticación y dictado usan fondo blanco con texto e iconos negros para conservar contraste `21:1` sobre la interfaz oscura.
+- La autenticación usa temporalmente un servicio mock detrás de un contrato preparado para sustituirse por la API real.
+- Los campos de nombre y correo ofrecen dictado nativo mediante `expo-speech-recognition` y anuncian sus estados con las APIs de accesibilidad de React Native.
+- El campo de edad también ofrece dictado y conserva teclado numérico como alternativa.
+- La interfaz puede previsualizarse con Expo Go: el módulo de dictado se carga de forma opcional y sus botones quedan deshabilitados. La prueba funcional del dictado requiere un development build.
+- El proyecto solo tiene como plataformas objetivo iOS y Android. No incluye configuración, dependencias directas ni scripts para navegador.
+- La integración de Google ML Kit, el backend y la autenticación real continúan abiertas.
+- El inicio con Google real deberá implementarse con un SDK nativo; no se usará un flujo específico de navegador.
+- La capacidad nativa `Sign in with Apple` está deshabilitada mientras se use un Apple Personal Team; se habilitará junto con la autenticación real y una membresía compatible.
 - El MVP no incluye Jest ni una carpeta de pruebas unitarias; actualmente se valida con Prettier, TypeScript, ESLint, Expo Doctor y pruebas manuales. Las comprobaciones automatizadas se ejecutan mediante Husky antes de cada commit.
 - El alcance detallado del primer lanzamiento se definirá y actualizará durante el desarrollo.
 
@@ -49,8 +59,16 @@ Una función nueva no debe complicar innecesariamente la acción principal: **ca
 - TypeScript.
 - NativeWind 4 con Tailwind CSS 3 para los estilos mediante `className`.
 - Android e iOS.
+- No se desarrollará una versión para navegador.
 - `expo-camera` como opción prevista para permisos, vista previa y captura.
-- Development build de Expo, porque la integración de Google ML Kit requiere código nativo que no estará disponible únicamente con Expo Go.
+- Development build de Expo obligatorio porque el dictado nativo y la futura integración de Google ML Kit requieren módulos que no están incluidos en Expo Go.
+
+### Entrada por voz
+
+- `expo-speech-recognition` conecta `SFSpeechRecognizer` en iOS y `SpeechRecognizer` en Android.
+- El idioma inicial del dictado es español de Colombia (`es-CO`).
+- El reconocimiento se usa únicamente para completar campos y la aplicación no persiste grabaciones.
+- El usuario debe conceder permisos de micrófono y reconocimiento de voz. El servicio del sistema puede requerir conexión o paquetes de idioma instalados.
 
 ### Reconocimiento de texto
 
@@ -71,7 +89,7 @@ Una función nueva no debe complicar innecesariamente la acción principal: **ca
 - Se contempla un backend sencillo en Python.
 - FastAPI es la opción inicial propuesta para exponer la API.
 - PostgreSQL es la opción inicial propuesta para datos persistentes y relaciones entre usuarios.
-- El MVP incluirá cuentas con correo y contraseña, Google y Apple.
+- El MVP incluirá cuentas con correo y contraseña; Apple y Google permanecen simulados hasta integrar sus proveedores reales.
 - La base de datos conservará únicamente los datos mínimos de la cuenta y sus preferencias.
 - La aplicación móvil debe conservar su función principal aunque el backend no esté disponible.
 - La comunicación se realizará mediante una API versionada y contratos claramente definidos.
@@ -96,6 +114,7 @@ Aplicación React Native + Expo
 ├── Coordinación del flujo de lectura
 ├── OCR local con Google ML Kit
 ├── Voz nativa del dispositivo
+├── Dictado nativo en formularios
 ├── Preferencias locales
 └── Cliente de API opcional
           │
@@ -156,6 +175,7 @@ El contenido fotografiado puede ser sensible. La existencia de usuarios y una ba
 - El texto reconocido es temporal y no se envía al backend de forma predeterminada.
 - No se incluyen imágenes ni textos reconocidos en logs, analítica o reportes de errores.
 - Solo se solicitan los permisos indispensables.
+- El micrófono se solicita únicamente cuando el usuario activa el dictado. VisioAid no conserva la grabación.
 - El usuario debe dar consentimiento explícito antes de usar una futura función que envíe contenido a un servicio remoto.
 - La cuenta y sus datos deben poder eliminarse.
 
@@ -184,6 +204,7 @@ Cuando comience la implementación, se espera separar al menos estas áreas:
 - `camera`: permisos, sesión de cámara y captura temporal.
 - `ocr`: integración con ML Kit y normalización del resultado.
 - `speech`: voces, velocidad, fragmentación y reproducción.
+- `dictation`: permisos, eventos y reconocimiento de voz para la entrada de texto.
 - `reader`: coordinación del flujo completo.
 - `accessibility`: anuncios, foco y preferencias visuales.
 - `settings`: preferencias locales y sincronizadas.
@@ -226,6 +247,7 @@ Una decisión abierta solo debe pasar a “decidida” cuando exista una razón 
 
 - La calidad del OCR depende del enfoque, iluminación, tamaño y orientación del texto.
 - El comportamiento del TTS cambia entre Android e iOS.
+- La disponibilidad y precisión del dictado dependen del reconocedor, idioma instalado y conectividad del dispositivo.
 - Un wrapper de ML Kit sin mantenimiento puede bloquear futuras actualizaciones de Expo.
 - Las cuentas y el backend pueden aumentar el tiempo de desarrollo sin mejorar inicialmente la función principal.
 - Enviar imágenes a servicios remotos podría romper la promesa de privacidad si no se controla explícitamente.
@@ -282,6 +304,7 @@ Reglas de mantenimiento:
 | 2026-09-01 | Aprobar la estructura inicial de React Native en la raíz del repositorio      | Iniciar la implementación sin una carpeta intermedia `mobile/`                                        |
 | 2026-09-01 | Excluir pruebas unitarias y Jest de la estructura inicial                     | Mantener el alcance técnico del MVP limitado a verificaciones estáticas y pruebas manuales            |
 | 2026-09-01 | Mantener únicamente el código de inicialización de Expo y las carpetas vacías | Separar claramente la preparación estructural de la implementación funcional                          |
+| 2026-09-03 | Deshabilitar temporalmente la capacidad nativa Sign in with Apple             | Permitir builds con Apple Personal Team mientras el acceso con Apple continúa mockeado                |
 
 ## Documentos relacionados
 
