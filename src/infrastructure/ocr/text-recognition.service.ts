@@ -1,6 +1,5 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 
-
 const OCR_API_URL = 'https://api.ocr.space/parse/image';
 const OCR_API_KEY = 'helloworld';
 
@@ -36,10 +35,7 @@ export async function recognizeText(imageUri: string): Promise<string> {
 
   const formData = new FormData();
 
-  formData.append(
-    'base64Image',
-    `data:image/jpeg;base64,${manipulatedImage.base64}`,
-  );
+  formData.append('base64Image', `data:image/jpeg;base64,${manipulatedImage.base64}`);
 
   formData.append('language', 'spa');
   formData.append('isOverlayRequired', 'false');
@@ -68,8 +64,7 @@ export async function recognizeText(imageUri: string): Promise<string> {
   }
 
   return (
-    result.ParsedResults
-      ?.map((item) => item.ParsedText ?? '')
+    result.ParsedResults?.map((item) => item.ParsedText ?? '')
       .join('\n')
       .trim() ?? ''
   );
