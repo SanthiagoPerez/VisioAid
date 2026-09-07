@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 
 import { BackButton, SpokenGuideButton } from '@/accessibility/ScreenActions';
 import { useSpokenGuidance } from '@/accessibility/useSpokenGuidance';
@@ -20,6 +20,14 @@ export default function WelcomeRoute() {
         <Text accessibilityRole="header" style={styles.title}>
           Bienvenido a VisioAid
         </Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Abrir cámara para reconocer texto"
+          onPress={() => router.push('/reader' as Href)}
+          style={styles.cameraButton}
+        >
+          <Text style={styles.cameraButtonText}>Abrir cámara</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -36,4 +44,13 @@ const styles = StyleSheet.create({
   },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   title: { color: '#FFFFFF', fontSize: 36, fontWeight: '800', textAlign: 'center' },
+  cameraButton: {
+    minHeight: 56,
+    justifyContent: 'center',
+    marginTop: 28,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  cameraButtonText: { color: '#000000', fontSize: 19, fontWeight: '800' },
 });
