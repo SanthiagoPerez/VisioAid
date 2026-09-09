@@ -1,4 +1,4 @@
-# VisioAid
+# VisioAid--- Samuel
 
 Aplicación móvil accesible para iOS y Android que permite capturar texto del entorno, reconocerlo localmente y leerlo mediante la voz del dispositivo.
 
