@@ -18,12 +18,14 @@ export async function recognizeText(imageUri: string): Promise<string> {
     [
       {
         resize: {
-          width: 1600,
+          // 1280 px conserva texto legible en documentos normales y reduce el
+          // tiempo de compresión, subida y procesamiento frente a la foto original.
+          width: 1280,
         },
       },
     ],
     {
-      compress: 0.7,
+      compress: 0.6,
       format: ImageManipulator.SaveFormat.JPEG,
       base64: true,
     },
@@ -40,6 +42,9 @@ export async function recognizeText(imageUri: string): Promise<string> {
   formData.append('language', 'spa');
   formData.append('isOverlayRequired', 'false');
   formData.append('OCREngine', '2');
+  formData.append('detectOrientation', 'true');
+  formData.append('scale', 'false');
+  formData.append('isTable', 'false');
 
   const response = await fetch(OCR_API_URL, {
     method: 'POST',
